@@ -22,6 +22,7 @@ class DatabaseHelper {
   }
 
   Future _createDB(Database db, int version) async {
+    // produk
     await db.execute('''
       CREATE TABLE products (
         id INTEGER PRIMARY KEY,
@@ -34,10 +35,24 @@ class DatabaseHelper {
         count INTEGER
       )
     ''');
+
+    // fav
+    await db.execute('''
+      CREATE TABLE favorites (
+        id INTEGER PRIMARY KEY,
+        title TEXT,
+        price REAL,
+        description TEXT,
+        category TEXT,
+        image TEXT,
+        rate REAL,
+        count INTEGER
+      )
+    ''');
   }
 
-  // * Convert Model -> Map (SQLite schema)
-  Map<String, dynamic> _toDbJson(ProductsModel p) => {
+  // produk
+  Map<String, dynamic> toDbJson(ProductsModel p) => {
     "id": p.id,
     "title": p.title,
     "price": p.price,
@@ -48,7 +63,7 @@ class DatabaseHelper {
     "count": p.rating.count,
   };
 
-  ProductsModel _fromDbJson(Map<String, dynamic> json) => ProductsModel(
+  ProductsModel fromDbJson(Map<String, dynamic> json) => ProductsModel(
     id: json["id"],
     title: json["title"],
     price: json["price"],
@@ -58,22 +73,49 @@ class DatabaseHelper {
     rating: Rating(rate: json["rate"], count: json["count"]),
   );
 
-  // INSERT
   Future<void> insertBatch(List<ProductsModel> list) async {
     final db = await instance.database;
     Batch batch = db.batch();
-
     for (var p in list) {
-      batch.insert("products", _toDbJson(p));
+      batch.insert("products", toDbJson(p));
     }
     await batch.commit(noResult: true);
   }
 
-  // READ
-  Future<List<ProductsModel>> readAll() async {
+  Future<List<ProductsModel>> readAllProducts() async {
     final db = await instance.database;
-    final data = await db.query("products");
+    final result = await db.query("products");
+    return result.map((e) => fromDbJson(e)).toList();
+  }
 
-    return data.map((e) => _fromDbJson(e)).toList();
+  // fav
+  Future<void> addToFavorite(ProductsModel p) async {
+    final db = await instance.database;
+    await db.insert(
+      "favorites",
+      toDbJson(p),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  Future<void> removeFavorite(int id) async {
+    final db = await instance.database;
+    await db.delete("favorites", where: "id = ?", whereArgs: [id]);
+  }
+
+  Future<List<ProductsModel>> readFavorites() async {
+    final db = await instance.database;
+    final result = await db.query("favorites");
+    return result.map((e) => fromDbJson(e)).toList();
+  }
+
+  Future<bool> isFavorite(int id) async {
+    final db = await instance.database;
+    final result = await db.query(
+      "favorites",
+      where: "id = ?",
+      whereArgs: [id],
+    );
+    return result.isNotEmpty;
   }
 }

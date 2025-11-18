@@ -30,7 +30,7 @@ class LoginController extends GetxController {
           final prefs = await SharedPreferences.getInstance();
           await prefs.setString('token', token);
 
-          Get.offAllNamed(AppRoutes.products);
+          Get.offAllNamed(AppRoutes.main);
         } else {
           Get.snackbar(
             "Gagal",

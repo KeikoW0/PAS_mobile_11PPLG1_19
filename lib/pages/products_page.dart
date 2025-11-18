@@ -14,16 +14,29 @@ class ProductsPage extends StatelessWidget {
 
       return ListView.builder(
         itemCount: controller.products.length,
-        itemBuilder: (context, index) {
-          final item = controller.products[index];
+        itemBuilder: (context, i) {
+          final item = controller.products[i];
 
-          return Card(
-            child: ListTile(
-              leading: Image.network(item.image, width: 50),
-              title: Text(item.title),
-              subtitle: Text(item.description, maxLines: 2),
-              trailing: Text("\$${item.price}"),
-            ),
+          return FutureBuilder<bool>(
+            future: controller.isFavorite(item.id),
+            builder: (_, snapshot) {
+              bool isFav = snapshot.data ?? false;
+
+              return Card(
+                child: ListTile(
+                  leading: Image.network(item.image, width: 50),
+                  title: Text(item.title),
+                  subtitle: Text(item.description, maxLines: 2),
+                  trailing: IconButton(
+                    icon: Icon(
+                      isFav ? Icons.bookmark : Icons.bookmark_border,
+                      color: isFav ? Colors.orange : Colors.grey,
+                    ),
+                    onPressed: () => controller.toggleFavorite(item),
+                  ),
+                ),
+              );
+            },
           );
         },
       );
