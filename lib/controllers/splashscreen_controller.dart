@@ -21,7 +21,7 @@ class SplashscreenController extends GetxController {
     if (user == null) {
       Get.offAll(() => LoginPage());
     } else {
-      Get.offAll(() => ProductsPage(categories: []));
+      Get.offAll(() => ProductsPage());
     }
   }
 }

@@ -10,7 +10,7 @@ class DatabaseHelper {
 
   Future<Database> get database async {
     if (_database != null) return _database!;
-    _database = await _initDB('products.db');
+    _database = await _initDB("products.db");
     return _database!;
   }
 
@@ -23,48 +23,57 @@ class DatabaseHelper {
 
   Future _createDB(Database db, int version) async {
     await db.execute('''
-    CREATE TABLE categories (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      title TEXT,
-      price TEXT,
-      description TEXT,
-      rating TEXT
-    )
+      CREATE TABLE products (
+        id INTEGER PRIMARY KEY,
+        title TEXT,
+        price REAL,
+        description TEXT,
+        category TEXT,
+        image TEXT,
+        rate REAL,
+        count INTEGER
+      )
     ''');
   }
 
-  Future<int> create(ProductsModel category) async {
-    final db = await instance.database;
-    return await db.insert('categories', category.toJson());
-  }
+  // * Convert Model -> Map (SQLite schema)
+  Map<String, dynamic> _toDbJson(ProductsModel p) => {
+    "id": p.id,
+    "title": p.title,
+    "price": p.price,
+    "description": p.description,
+    "category": categoryValues.reverse[p.category],
+    "image": p.image,
+    "rate": p.rating.rate,
+    "count": p.rating.count,
+  };
 
-  Future<List<ProductsModel>> readAllCategories() async {
-    final db = await instance.database;
-    final result = await db.query('categories');
-    return result.map((json) => ProductsModel.fromJson(json)).toList();
-  }
+  ProductsModel _fromDbJson(Map<String, dynamic> json) => ProductsModel(
+    id: json["id"],
+    title: json["title"],
+    price: json["price"],
+    description: json["description"],
+    category: categoryValues.map[json["category"]]!,
+    image: json["image"],
+    rating: Rating(rate: json["rate"], count: json["count"]),
+  );
 
-  Future<int> update(ProductsModel category) async {
-    final db = await instance.database;
-    return await db.update(
-      'categories',
-      category.toJson(),
-      where: 'id = ?',
-      whereArgs: [category.id],
-    );
-  }
-
-  Future<int> delete(int id) async {
-    final db = await instance.database;
-    return await db.delete('categories', where: 'id = ?', whereArgs: [id]);
-  }
-
-  Future<void> insertBatch(List<ProductsModel> categories) async {
+  // INSERT
+  Future<void> insertBatch(List<ProductsModel> list) async {
     final db = await instance.database;
     Batch batch = db.batch();
-    for (var cat in categories) {
-      batch.insert('categories', cat.toJson());
+
+    for (var p in list) {
+      batch.insert("products", _toDbJson(p));
     }
     await batch.commit(noResult: true);
+  }
+
+  // READ
+  Future<List<ProductsModel>> readAll() async {
+    final db = await instance.database;
+    final data = await db.query("products");
+
+    return data.map((e) => _fromDbJson(e)).toList();
   }
 }

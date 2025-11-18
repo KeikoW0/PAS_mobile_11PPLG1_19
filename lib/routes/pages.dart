@@ -15,7 +15,8 @@ class AppPages {
     ),
     GetPage(
       name: AppRoutes.products,
-      page: () => ProductsPage(categories: []),
+      page: () => ProductsPage(),
+      binding: LoginBinding(),
     ),
   ];
 }
